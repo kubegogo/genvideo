@@ -1,8 +1,10 @@
 package repository
 
 import (
+	"context"
 	"database/sql"
 	"encoding/json"
+	"fmt"
 
 	"github.com/go-redis/redis/v8"
 	"github.com/kubegogo/genvideo/internal/model"

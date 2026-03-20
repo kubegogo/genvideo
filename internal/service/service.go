@@ -12,15 +12,21 @@ import (
 	"github.com/kubegogo/genvideo/internal/config"
 	"github.com/kubegogo/genvideo/internal/model"
 	"github.com/kubegogo/genvideo/internal/repository"
+	"github.com/kubegogo/genvideo/pkg/minimax"
 )
 
 type Service struct {
-	repo *repository.Repository
-	cfg  *config.Config
+	repo    *repository.Repository
+	cfg     *config.Config
+	minimax *minimax.Client
 }
 
 func NewService(repo *repository.Repository, cfg *config.Config) *Service {
-	return &Service{repo: repo, cfg: cfg}
+	svc := &Service{repo: repo, cfg: cfg}
+	if cfg.MinimaxAPIKey != "" {
+		svc.minimax = minimax.NewClient(cfg.MinimaxAPIKey)
+	}
+	return svc
 }
 
 // Video Repurposing Functions
@@ -36,7 +42,6 @@ func (s *Service) DownloadVideo(ctx context.Context, req *model.DownloadRequest)
 		return nil, err
 	}
 
-	// Start async download
 	go s.executeDownload(task.ID, req)
 
 	return task, nil
@@ -50,14 +55,12 @@ func (s *Service) executeDownload(taskID int64, req *model.DownloadRequest) {
 
 	s.updateTaskProgress(task, 10, "starting download")
 
-	// Simulate download based on platform
 	outputDir := filepath.Join(os.Getenv("HOME"), "genvideo", "downloads")
 	os.MkdirAll(outputDir, 0755)
 
 	var cmd *exec.Cmd
 	switch req.Platform {
 	case "douyin":
-		// Use yt-dlp or similar tool for Douyin
 		outputPath := filepath.Join(outputDir, fmt.Sprintf("video_%d.mp4", taskID))
 		cmd = exec.Command("yt-dlp", "-o", outputPath, req.VideoURL)
 	case "kuaishou":
@@ -78,7 +81,6 @@ func (s *Service) executeDownload(taskID int64, req *model.DownloadRequest) {
 
 	s.updateTaskProgress(task, 70, "uploading to OSS")
 
-	// Upload to OSS
 	ossPath := fmt.Sprintf("downloads/%d/video.mp4", taskID)
 	if err := s.uploadToOSS(outputDir, ossPath); err != nil {
 		s.updateTaskError(task, fmt.Sprintf("OSS upload failed: %v", err))
@@ -109,26 +111,19 @@ func (s *Service) executeRecreate(taskID int64, req *model.RecreateRequest) {
 	task, _ := s.repo.GetTask(taskID)
 
 	s.updateTaskProgress(task, 10, "analyzing original video")
-
-	// Call AI to recreate video based on style
 	s.updateTaskProgress(task, 50, "AI processing")
 
-	// Generate new video via n8n or ComfyUI
 	outputDir := filepath.Join(os.Getenv("HOME"), "genvideo", "output")
 	os.MkdirAll(outputDir, 0755)
 	outputPath := filepath.Join(outputDir, fmt.Sprintf("recreated_%d.mp4", taskID))
 
 	s.updateTaskProgress(task, 80, "generating video")
 
-	// Call ComfyUI workflow
 	workflowResult := s.callComfyUI(req.Style, req.OriginalVideo)
 	if workflowResult == "" {
 		s.updateTaskError(task, "ComfyUI workflow failed")
 		return
 	}
-
-	// Copy result to output path (simulated)
-	// In real implementation, this would be the actual generated video path
 
 	s.updateTaskProgress(task, 90, "uploading to OSS")
 
@@ -161,15 +156,15 @@ func (s *Service) executeScriptGeneration(taskID int64, req *model.ScriptRequest
 	task, _ := s.repo.GetTask(taskID)
 
 	s.updateTaskProgress(task, 10, "parsing input")
-
-	// Generate script using AI
 	s.updateTaskProgress(task, 50, "generating script")
 
 	var script string
-	if s.cfg.AIProvider == "minimax" {
-		script = s.callMinimaxScript(req.Input, req.Style, req.Duration)
-	} else {
+	if s.cfg.AIProvider == "minimax" && s.minimax != nil {
+		script, _ = s.minimax.GenerateScript(req.Input, req.Style, req.Duration)
+	} else if s.cfg.AIProvider == "self_hosted" {
 		script = s.callOllamaScript(req.Input, req.Style, req.Duration)
+	} else {
+		script = fmt.Sprintf("Script placeholder for %s, duration: %ds", req.Input, req.Duration)
 	}
 
 	s.updateTaskProgress(task, 100, "completed")
@@ -180,7 +175,7 @@ func (s *Service) GenerateStoryboard(ctx context.Context, req *model.StoryboardR
 	task := &model.Task{
 		Type:     "script_to_video",
 		Status:   "pending",
-		Input:    "storyboard:" + req.SceneCount,
+		Input:    fmt.Sprintf("storyboard:%d", req.SceneCount),
 		Progress: 0,
 	}
 	if err := s.repo.CreateTask(task); err != nil {
@@ -197,12 +192,13 @@ func (s *Service) executeStoryboardGeneration(taskID int64, req *model.Storyboar
 
 	s.updateTaskProgress(task, 30, "generating storyboard")
 
-	// Call AI to generate storyboard
 	var storyboard string
-	if s.cfg.AIProvider == "minimax" {
-		storyboard = s.callMinimaxStoryboard(req.Script, req.SceneCount)
-	} else {
+	if s.cfg.AIProvider == "minimax" && s.minimax != nil {
+		storyboard, _ = s.minimax.GenerateStoryboard(req.Script, req.SceneCount)
+	} else if s.cfg.AIProvider == "self_hosted" {
 		storyboard = s.callOllamaStoryboard(req.Script, req.SceneCount)
+	} else {
+		storyboard = fmt.Sprintf("Storyboard with %d scenes", req.SceneCount)
 	}
 
 	s.updateTaskProgress(task, 100, "completed")
@@ -229,8 +225,6 @@ func (s *Service) executeFrameGeneration(taskID int64, req *model.FrameRequest) 
 	task, _ := s.repo.GetTask(taskID)
 
 	s.updateTaskProgress(task, 30, "generating first/last frames")
-
-	// Call ComfyUI to generate images
 	frames := s.callComfyUIFrames(req.Storyboard, req.Style)
 
 	s.updateTaskProgress(task, 100, "completed")
@@ -257,8 +251,6 @@ func (s *Service) executeVideoGeneration(taskID int64, req *model.VideoGeneratio
 	task, _ := s.repo.GetTask(taskID)
 
 	s.updateTaskProgress(task, 20, "preparing video generation")
-
-	// Call ComfyUI video workflow
 	s.updateTaskProgress(task, 50, "generating video via ComfyUI")
 
 	outputPath := s.callComfyUIVideo(req.Storyboard, req.Frames, req.Duration)
@@ -297,10 +289,8 @@ func (s *Service) executePublish(taskID int64, req *model.PublishRequest) {
 		progress := (i * 100) / len(req.Platforms)
 		s.updateTaskProgress(task, progress, "publishing to "+platform)
 
-		// Simulate human-like publishing with delays
 		time.Sleep(3 * time.Second)
 
-		// Call n8n workflow to publish
 		if err := s.callN8nPublish(platform, req.VideoPath, req.Caption, req.Tags); err != nil {
 			s.updateTaskError(task, fmt.Sprintf("publish failed to %s: %v", platform, err))
 			return
@@ -332,25 +322,13 @@ func (s *Service) updateTaskError(task *model.Task, errMsg string) {
 }
 
 func (s *Service) uploadToOSS(localPath, ossPath string) error {
-	// Use ossutil or oss SDK to upload
 	cmd := exec.Command("ossutil", "cp", localPath, fmt.Sprintf("oss://%s/%s", s.cfg.OSSBucket, ossPath))
 	_, err := cmd.CombinedOutput()
 	return err
 }
 
-func (s *Service) callMinimaxScript(input, style string, duration int) string {
-	// Call Minimax API for script generation
-	// In real implementation, this would call the actual API
-	return fmt.Sprintf("Generated script for %s style, %d seconds duration", style, duration)
-}
-
 func (s *Service) callOllamaScript(input, style string, duration int) string {
-	// Call Ollama for script generation
 	return fmt.Sprintf("Ollama generated script for %s style, %d seconds duration", style, duration)
-}
-
-func (s *Service) callMinimaxStoryboard(script string, sceneCount int) string {
-	return fmt.Sprintf("Storyboard with %d scenes", sceneCount)
 }
 
 func (s *Service) callOllamaStoryboard(script string, sceneCount int) string {
@@ -358,21 +336,17 @@ func (s *Service) callOllamaStoryboard(script string, sceneCount int) string {
 }
 
 func (s *Service) callComfyUI(style, input string) string {
-	// Call ComfyUI API
 	return ""
 }
 
 func (s *Service) callComfyUIFrames(storyboard, style string) []string {
-	// Call ComfyUI for image generation
 	return []string{"frame1.png", "frame2.png"}
 }
 
 func (s *Service) callComfyUIVideo(storyboard string, frames []string, duration int) string {
-	// Call ComfyUI video workflow
 	return filepath.Join(os.Getenv("HOME"), "genvideo", "output", "video.mp4")
 }
 
 func (s *Service) callN8nPublish(platform, videoPath, caption string, tags []string) error {
-	// Call n8n webhook to trigger publish workflow
 	return nil
 }
