@@ -1,0 +1,9 @@
+.git
+.gitignore
+*.md
+docs/
+frontend/
+node_modules/
+.vscode/
+.idea/
+*.log
