@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom'
 import VideoGenerate from './pages/VideoGenerate'
 import VideoRepurposing from './pages/VideoRepurposing'
 import Settings from './pages/Settings'
-import './App.css'
 
 function App() {
   return (
