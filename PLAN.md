@@ -16,48 +16,19 @@ AI 视频生成系统，支持：
 | 缓存 | Redis 7 | 6379 |
 | AI | Minimax API / Ollama | - |
 
-## 开发阶段
+## 视频生成选项（用户可选）
 
-### Phase 1: 项目初始化
-- [ ] 初始化 Git 仓库
-- [ ] 创建项目目录结构
-- [ ] 编写 CLAUDE.md
-
-### Phase 2: 后端开发
-- [ ] Go 模块初始化
-- [ ] 配置管理 (config)
-- [ ] 数据模型 (model)
-- [ ] 数据库层 (repository) - MySQL + Redis
-- [ ] 业务逻辑层 (service)
-- [ ] HTTP 处理器 (handler)
-- [ ] 路由和中间件
-
-### Phase 3: 前端开发
-- [ ] React + Vite 初始化
-- [ ] 页面组件
-- [ ] API 调用
-- [ ] 样式
-
-### Phase 4: 文档
-- [ ] 系统架构文档
-- [ ] 数据库字典
-- [ ] API 文档
-- [ ] 部署文档
-
-### Phase 5: Docker 环境
-- [ ] docker-compose.yml
-- [ ] Dockerfile.backend
-- [ ] Dockerfile.frontend
-- [ ] Makefile
+1. **外部AI API** - Minimax（用户填API Key）
+2. **自建服务** - n8n + ComfyUI + Ollama（用户配置）
 
 ## 核心流程
 
-### 视频搬运流程
+### 视频搬运
 ```
 平台选择 → 搜索热门视频 → 下载 → AI风格转换 → 发布
 ```
 
-### 脚本转视频流程
+### 脚本转视频
 ```
 输入(关键词/文档/小说)
     ↓
@@ -72,32 +43,78 @@ AI 视频生成系统，支持：
 发布 (n8n 模拟人工操作)
 ```
 
-## 文件结构
+## 开发阶段
+
+### Phase 1: 项目初始化
+- [ ] Git 初始化
+- [ ] 创建项目结构
+- [ ] 编写 CLAUDE.md
+
+### Phase 2: 后端开发 (Go + Gin)
+- [ ] Go 模块初始化
+- [ ] 配置管理 (config)
+- [ ] 数据模型 (model)
+- [ ] 数据库层 (repository) - MySQL + Redis
+- [ ] 业务逻辑层 (service)
+- [ ] HTTP 处理器 (handler)
+- [ ] AI 客户端 (minimax, comfyui, n8n)
+
+### Phase 3: 前端开发 (React)
+- [ ] Vite + React 初始化
+- [ ] 页面组件
+- [ ] API 调用
+- [ ] 样式
+
+### Phase 4: Docker 环境
+- [ ] docker-compose.yml
+- [ ] Dockerfile.backend
+- [ ] Dockerfile.frontend
+- [ ] nginx 配置
+
+### Phase 5: 文档
+- [ ] 系统架构文档
+- [ ] 数据库字典
+- [ ] API 文档
+
+## 目录结构
 
 ```
 genvideo/
-├── cmd/server/           # 入口
+├── cmd/server/              # 入口
 ├── internal/
-│   ├── config/          # 配置
-│   ├── handler/         # HTTP
-│   ├── middleware/      # 中间件
-│   ├── model/          # 数据模型
-│   ├── repository/      # 数据访问
-│   └── service/        # 业务逻辑
+│   ├── config/            # 配置
+│   ├── handler/           # HTTP处理器
+│   ├── middleware/        # 中间件
+│   ├── model/            # 数据模型
+│   ├── repository/        # MySQL + Redis
+│   └── service/           # 业务逻辑
 ├── pkg/
-│   ├── minimax/        # AI客户端
-│   ├── n8n/            # n8n客户端
-│   ├── comfyui/         # ComfyUI客户端
-│   └── oss/            # OSS客户端
-├── frontend/           # React前端
-├── docs/               # 文档
-├── docker-compose.yml
-├── Dockerfile.backend
-└── Dockerfile.frontend
+│   ├── minimax/           # Minimax API客户端
+│   ├── comfyui/           # ComfyUI客户端
+│   ├── n8n/               # n8n客户端
+│   └── response/           # 响应工具
+├── frontend/              # React前端
+├── docs/                  # 文档
+└── docker-compose.yml
 ```
+
+## 环境要求
+
+- 前端端口：3003
+- 后端端口：3004
+- MySQL/Redis：Docker 自建
+- 所有视频同步到阿里云 OSS
+- 自动化操作必须模拟真人行为（3-60秒延迟）
 
 ## 部署
 
-- 开发: `docker-compose up -d --build`
-- 测试: Docker 容器内运行
-- 端口: 前端3003, 后端3004
+```bash
+# 构建并启动
+docker-compose up -d --build
+
+# 查看状态
+docker-compose ps
+
+# 查看日志
+docker-compose logs -f
+```

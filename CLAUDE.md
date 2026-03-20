@@ -11,8 +11,8 @@ AI video generation system with agent teams that auto-evolve. Two main capabilit
 
 ## Tech Stack
 
-- **Frontend**: React (Vite)
-- **Backend**: Go (Gin framework)
+- **Frontend**: React + Vite
+- **Backend**: Go + Gin framework
 - **Database**: MySQL 8 (Docker)
 - **Cache**: Redis 7 (Docker)
 - **AI**: Minimax model (fallback: wait 5 hours if token exhausted)
@@ -33,7 +33,7 @@ AI video generation system with agent teams that auto-evolve. Two main capabilit
 
 ## Development Environment
 
-- Development: local machine with Docker
+- Development: local Docker environment
 - Testing: Docker container
 - MySQL/Redis: local Docker self-hosted
 - Frontend port: 3003
@@ -76,3 +76,8 @@ Publish (n8n simulates human operation)
 - Update platform risk control rules every 12 hours via web search
 - Log all failures and account exceptions to files
 - Auto-update weekly (Sundays 23:00)
+
+## Video Data
+
+- All video files must be synced to Alibaba Cloud OSS using ossutil
+- OSS configuration is provided by user
