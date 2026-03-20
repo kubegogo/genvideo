@@ -1,9 +1,6 @@
 package config
 
-import (
-	"os"
-	"strconv"
-)
+import "os"
 
 type Config struct {
 	// Server
@@ -17,28 +14,25 @@ type Config struct {
 	MySQLDatabase string
 
 	// Redis
-	RedisHost string
-	RedisPort string
+	RedisHost     string
+	RedisPort     string
 	RedisPassword string
 
-	// AI Provider (minimax or self-hosted)
-	AIProvider     string
-	MinimaxAPIKey   string
-	MinimaxBaseURL  string
+	// AI Provider
+	AIProvider    string
+	MinimaxAPIKey string
+	MinimaxBaseURL string
 
-	// Self-hosted (n8n + ComfyUI + Ollama)
-	N8NBaseURL      string
-	ComfyUIBaseURL  string
-	OllamaBaseURL   string
+	// Self-hosted
+	N8NBaseURL     string
+	ComfyUIBaseURL string
+	OllamaBaseURL  string
 
 	// OSS
-	OSSEndpoint     string
-	OSSAccessKey    string
-	OSSSecretKey    string
-	OSSBucket       string
-
-	// Video download sources
-	VideoSources    []string
+	OSSEndpoint string
+	OSSAccessKey string
+	OSSSecretKey string
+	OSSBucket    string
 }
 
 func Load() *Config {
@@ -53,31 +47,21 @@ func Load() *Config {
 		RedisPort:      getEnv("REDIS_PORT", "6379"),
 		RedisPassword:  getEnv("REDIS_PASSWORD", ""),
 		AIProvider:     getEnv("AI_PROVIDER", "minimax"),
-		MinimaxAPIKey:  os.Getenv("MINIMAX_API_KEY"),
+		MinimaxAPIKey: os.Getenv("MINIMAX_API_KEY"),
 		MinimaxBaseURL: getEnv("MINIMAX_BASE_URL", "https://api.minimax.chat"),
 		N8NBaseURL:     getEnv("N8N_BASE_URL", "http://localhost:5678"),
 		ComfyUIBaseURL: getEnv("COMFYUI_BASE_URL", "http://localhost:8188"),
 		OllamaBaseURL:  getEnv("OLLAMA_BASE_URL", "http://localhost:11434"),
-		OSSEndpoint:    getEnv("OSS_ENDPOINT", "oss-cn-hangzhou.aliyuncs.com"),
-		OSSAccessKey:   os.Getenv("OSS_ACCESS_KEY"),
+		OSSEndpoint:   getEnv("OSS_ENDPOINT", "oss-cn-hangzhou.aliyuncs.com"),
+		OSSAccessKey:  os.Getenv("OSS_ACCESS_KEY"),
 		OSSSecretKey:  os.Getenv("OSS_SECRET_KEY"),
-		OSSBucket:      getEnv("OSS_BUCKET", "genvideo"),
-		VideoSources:   []string{"douyin", "kuaishou", "bilibili", "xiaohongshu"},
+		OSSBucket:     getEnv("OSS_BUCKET", "genvideo"),
 	}
 }
 
 func getEnv(key, defaultValue string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
-	}
-	return defaultValue
-}
-
-func getEnvInt(key string, defaultValue int) int {
-	if value := os.Getenv(key); value != "" {
-		if i, err := strconv.Atoi(value); err == nil {
-			return i
-		}
 	}
 	return defaultValue
 }

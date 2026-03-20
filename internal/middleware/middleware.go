@@ -12,12 +12,10 @@ func CORS() gin.HandlerFunc {
 		c.Header("Access-Control-Allow-Origin", "*")
 		c.Header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		c.Header("Access-Control-Allow-Headers", "Content-Type, Authorization")
-
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
 		}
-
 		c.Next()
 	}
 }
@@ -26,9 +24,7 @@ func Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		start := time.Now()
 		path := c.Request.URL.Path
-
 		c.Next()
-
 		log.Printf("[%s] %s %s %d %v",
 			time.Now().Format("2006-01-02 15:04:05"),
 			c.Request.Method,
@@ -36,12 +32,5 @@ func Logger() gin.HandlerFunc {
 			c.Writer.Status(),
 			time.Since(start),
 		)
-	}
-}
-
-func RateLimiter() gin.HandlerFunc {
-	// Simple rate limiter implementation
-	return func(c *gin.Context) {
-		c.Next()
 	}
 }

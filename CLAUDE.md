@@ -11,15 +11,15 @@ AI video generation system with agent teams that auto-evolve. Two main capabilit
 
 ## Tech Stack
 
-- **Frontend**: React
-- **Backend**: Go
-- **Database**: MySQL 8 (local Docker)
-- **Cache**: Redis 7 (local Docker)
+- **Frontend**: React (Vite)
+- **Backend**: Go (Gin framework)
+- **Database**: MySQL 8 (Docker)
+- **Cache**: Redis 7 (Docker)
 - **AI**: Minimax model (fallback: wait 5 hours if token exhausted)
 
 ## Architecture
 
-- **n8n**: Workflow automation for video generation pipeline
+- **n8n**: Workflow automation for publishing
 - **ComfyUI**: Image/video generation via AI workflows
 - **Ollama**: Local LLM for self-hosted option
 - **Video Generation Options** (user-selectable):
@@ -30,13 +30,14 @@ AI video generation system with agent teams that auto-evolve. Two main capabilit
 
 - Push to: https://github.com/kubegogo/genvideo.git
 - All documentation: `docs/` directory
-- Include: product workflow, architecture, dependencies, database schema
 
 ## Development Environment
 
-- Development: local machine
+- Development: local machine with Docker
 - Testing: Docker container
 - MySQL/Redis: local Docker self-hosted
+- Frontend port: 3003
+- Backend port: 3004
 
 ## Agent Team Behavior
 
@@ -45,3 +46,33 @@ AI video generation system with agent teams that auto-evolve. Two main capabilit
 - Search GitHub for best solutions (including kubegogo repos)
 - Create repos in kubegogo organization
 - Use minimax model; wait 5 hours for token reset if exhausted
+- Parallel execution when possible
+
+## Core Flows
+
+### Video Repurposing
+```
+Platform → Search Popular Videos → Download → AI Recreate → Publish
+```
+
+### Script-to-Video
+```
+Input (keywords/doc/novel)
+    ↓
+Generate Script (Minimax/Ollama)
+    ↓
+Generate Storyboard
+    ↓
+Generate First/Last Frame Images (ComfyUI)
+    ↓
+Generate Video (ComfyUI)
+    ↓
+Publish (n8n simulates human operation)
+```
+
+## Risk Control
+
+- All automation must mimic human behavior (slow typing 3s-60s intervals, screen sliding, clicking)
+- Update platform risk control rules every 12 hours via web search
+- Log all failures and account exceptions to files
+- Auto-update weekly (Sundays 23:00)

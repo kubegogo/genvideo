@@ -18,17 +18,12 @@ func NewHandler(svc *service.Service) *Handler {
 	return &Handler{svc: svc}
 }
 
-// Health check
+// Health 健康检查
 func (h *Handler) Health(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
-// ============================================
-// 视频生成 API
-// 输入文案/关键词 → AI生成素材 → 自动剪辑 → 成片
-// ============================================
-
-// GenerateVideo 视频生成入口
+// GenerateVideo 生成视频（脚本转视频）
 // POST /api/v1/video/generate
 func (h *Handler) GenerateVideo(c *gin.Context) {
 	var req model.VideoGenerationRequest
@@ -59,10 +54,6 @@ func (h *Handler) GenerateVideo(c *gin.Context) {
 
 	response.Success(c, task)
 }
-
-// ============================================
-// 视频搬运 API
-// ============================================
 
 // DownloadVideo 下载视频
 // POST /api/v1/video/download
@@ -118,23 +109,27 @@ func (h *Handler) PublishVideo(c *gin.Context) {
 	response.Success(c, task)
 }
 
-// ============================================
-// 配置 API
-// ============================================
-
-func (h *Handler) GetVideoProviders(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"providers": []string{"douyin", "kuaishou", "bilibili", "xiaohongshu"}})
-}
-
-func (h *Handler) SetVideoProvider(c *gin.Context) {
-	var provider model.VideoProvider
-	if err := c.ShouldBindJSON(&provider); err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
+// GetTask 获取任务状态
+// GET /api/v1/task/:id
+func (h *Handler) GetTask(c *gin.Context) {
+	idStr := c.Param("id")
+	id, err := strconv.ParseInt(idStr, 10, 64)
+	if err != nil {
+		response.Error(c, http.StatusBadRequest, "invalid task id")
 		return
 	}
-	response.Success(c, provider)
+
+	// TODO: 从数据库获取任务
+	c.JSON(http.StatusOK, gin.H{"id": id, "status": "processing", "progress": 50})
 }
 
+// ListTasks 列出任务
+// GET /api/v1/tasks
+func (h *Handler) ListTasks(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{"tasks": []interface{}{}})
+}
+
+// 配置相关 API
 func (h *Handler) GetAIProviders(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"providers": []gin.H{
@@ -144,44 +139,8 @@ func (h *Handler) GetAIProviders(c *gin.Context) {
 	})
 }
 
-func (h *Handler) SetAIProvider(c *gin.Context) {
-	var provider model.AIProvider
-	if err := c.ShouldBindJSON(&provider); err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
-		return
-	}
-	response.Success(c, provider)
-}
-
-func (h *Handler) GetOSSConfig(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"configured": true})
-}
-
-func (h *Handler) SetOSSConfig(c *gin.Context) {
-	var cfg model.OSSConfig
-	if err := c.ShouldBindJSON(&cfg); err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
-		return
-	}
-	response.Success(c, cfg)
-}
-
-// ============================================
-// 任务状态 API
-// ============================================
-
-func (h *Handler) GetTaskStatus(c *gin.Context) {
-	idStr := c.Param("id")
-	id, err := strconv.ParseInt(idStr, 10, 64)
-	if err != nil {
-		response.Error(c, http.StatusBadRequest, "invalid task id")
-		return
-	}
-
-	// TODO: 从数据库获取真实任务状态
-	c.JSON(http.StatusOK, gin.H{"id": id, "status": "processing", "progress": 50})
-}
-
-func (h *Handler) ListTasks(c *gin.Context) {
-	c.JSON(http.StatusOK, gin.H{"tasks": []interface{}{}})
+func (h *Handler) GetVideoProviders(c *gin.Context) {
+	c.JSON(http.StatusOK, gin.H{
+		"providers": []string{"douyin", "kuaishou", "bilibili", "xiaohongshu"},
+	})
 }
