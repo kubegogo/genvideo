@@ -4,15 +4,15 @@ import "time"
 
 // Task represents a video generation task
 type Task struct {
-	ID          int64     `json:"id"`
-	Type        string    `json:"type"` // "repurposing" or "script_to_video"
-	Status      string    `json:"status"` // "pending", "processing", "completed", "failed"
-	Input       string    `json:"input"`
-	Output      string    `json:"output,omitempty"`
-	Error       string    `json:"error,omitempty"`
-	Progress    int       `json:"progress"` // 0-100
-	CreatedAt   time.Time `json:"created_at"`
-	UpdatedAt   time.Time `json:"updated_at"`
+	ID        int64     `json:"id"`
+	Type      string    `json:"type"`    // "video_generation", "repurposing", "publish"
+	Status    string    `json:"status"`  // "pending", "processing", "completed", "failed"
+	Input     string    `json:"input"`   // input data or reference
+	Output    string    `json:"output,omitempty"` // output result or path
+	Error     string    `json:"error,omitempty"`
+	Progress  int       `json:"progress"` // 0-100
+	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 // VideoProvider represents a video platform configuration
@@ -42,51 +42,38 @@ type OSSConfig struct {
 	IsActive  bool   `json:"is_active"`
 }
 
-// ScriptRequest is the request to generate a script
-type ScriptRequest struct {
-	Input     string `json:"input"` // keywords, document path, or novel content
-	InputType string `json:"input_type"` // "keywords", "document", "novel"
-	Style     string `json:"style"` // "dramatic", "comedy", "documentary", etc.
-	Duration  int    `json:"duration"` // target duration in seconds
-}
+// ============================================
+// API Request/Response Models
+// ============================================
 
-// StoryboardRequest is the request to generate storyboard from script
-type StoryboardRequest struct {
-	Script    string `json:"script"`
-	SceneCount int   `json:"scene_count"`
-}
-
-// FrameRequest is the request to generate first/last frame images
-type FrameRequest struct {
-	Storyboard string `json:"storyboard"`
-	Style      string `json:"style"`
-}
-
-// VideoGenerationRequest is the request to generate video
+// VideoGenerationRequest 视频生成请求
 type VideoGenerationRequest struct {
-	Storyboard string   `json:"storyboard"`
-	Frames     []string `json:"frames"` // URLs or paths to frame images
-	Duration   int      `json:"duration"`
+	Input       string `json:"input"`        // 文案/关键词/脚本
+	InputType   string `json:"input_type"`  // "keywords", "script", "article"
+	Style       string `json:"style"`       // "dramatic", "comedy", "documentary"
+	Duration    int    `json:"duration"`     // 目标时长(秒)
+	Music       string `json:"music"`        // 背景音乐风格
+	AspectRatio string `json:"aspect_ratio"` // "16:9", "9:16", "1:1"
 }
 
-// DownloadRequest is the request to download a video
+// DownloadRequest 下载视频请求
 type DownloadRequest struct {
-	Platform   string `json:"platform"` // "douyin", "kuaishou", etc.
+	Platform   string `json:"platform"`  // "douyin", "kuaishou", etc.
 	VideoURL   string `json:"video_url"`
 	MetricType string `json:"metric_type"` // "likes", "views", "favorites"
 }
 
-// RecreateRequest is the request to recreate a video
+// RecreateRequest 二次创作请求
 type RecreateRequest struct {
 	OriginalVideo string `json:"original_video"`
 	Style         string `json:"style"`
 	KeepAudio     bool   `json:"keep_audio"`
 }
 
-// PublishRequest is the request to publish a video
+// PublishRequest 发布视频请求
 type PublishRequest struct {
-	VideoPath   string   `json:"video_path"`
-	Platforms   []string `json:"platforms"` // target platforms
-	Caption     string   `json:"caption"`
-	Tags        []string `json:"tags"`
+	VideoPath string   `json:"video_path"`
+	Platforms []string `json:"platforms"`
+	Caption   string   `json:"caption"`
+	Tags      []string `json:"tags"`
 }

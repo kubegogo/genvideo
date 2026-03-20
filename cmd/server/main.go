@@ -49,18 +49,16 @@ func main() {
 	// Routes
 	api := r.Group("/api/v1")
 	{
-		// Video repurposing endpoints
+		// 视频生成（核心功能）
+		// 输入文案/关键词 → AI生成素材 → 自动剪辑 → 成片
+		api.POST("/video/generate", h.GenerateVideo)
+
+		// 视频搬运
 		api.POST("/video/download", h.DownloadVideo)
 		api.POST("/video/recreate", h.RecreateVideo)
 		api.POST("/video/publish", h.PublishVideo)
 
-		// Script-to-video endpoints
-		api.POST("/script/generate", h.GenerateScript)
-		api.POST("/script/storyboard", h.GenerateStoryboard)
-		api.POST("/script/frames", h.GenerateFrames)
-		api.POST("/script/video", h.GenerateVideo)
-
-		// Configuration endpoints
+		// 配置
 		api.GET("/config/video-providers", h.GetVideoProviders)
 		api.POST("/config/video-providers", h.SetVideoProvider)
 		api.GET("/config/ai-providers", h.GetAIProviders)
@@ -68,7 +66,7 @@ func main() {
 		api.GET("/config/oss", h.GetOSSConfig)
 		api.POST("/config/oss", h.SetOSSConfig)
 
-		// Task status
+		// 任务状态
 		api.GET("/task/:id", h.GetTaskStatus)
 		api.GET("/tasks", h.ListTasks)
 	}

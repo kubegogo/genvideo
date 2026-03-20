@@ -23,8 +23,49 @@ func (h *Handler) Health(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"status": "ok"})
 }
 
-// Video Repurposing
+// ============================================
+// 视频生成 API
+// 输入文案/关键词 → AI生成素材 → 自动剪辑 → 成片
+// ============================================
 
+// GenerateVideo 视频生成入口
+// POST /api/v1/video/generate
+func (h *Handler) GenerateVideo(c *gin.Context) {
+	var req model.VideoGenerationRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// 设置默认值
+	if req.InputType == "" {
+		req.InputType = "keywords"
+	}
+	if req.Style == "" {
+		req.Style = "documentary"
+	}
+	if req.Duration == 0 {
+		req.Duration = 60
+	}
+	if req.AspectRatio == "" {
+		req.AspectRatio = "16:9"
+	}
+
+	task, err := h.svc.GenerateVideo(c.Request.Context(), &req)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.Success(c, task)
+}
+
+// ============================================
+// 视频搬运 API
+// ============================================
+
+// DownloadVideo 下载视频
+// POST /api/v1/video/download
 func (h *Handler) DownloadVideo(c *gin.Context) {
 	var req model.DownloadRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -41,6 +82,8 @@ func (h *Handler) DownloadVideo(c *gin.Context) {
 	response.Success(c, task)
 }
 
+// RecreateVideo 二次创作
+// POST /api/v1/video/recreate
 func (h *Handler) RecreateVideo(c *gin.Context) {
 	var req model.RecreateRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -57,6 +100,8 @@ func (h *Handler) RecreateVideo(c *gin.Context) {
 	response.Success(c, task)
 }
 
+// PublishVideo 发布视频
+// POST /api/v1/video/publish
 func (h *Handler) PublishVideo(c *gin.Context) {
 	var req model.PublishRequest
 	if err := c.ShouldBindJSON(&req); err != nil {
@@ -73,76 +118,11 @@ func (h *Handler) PublishVideo(c *gin.Context) {
 	response.Success(c, task)
 }
 
-// Script-to-Video
-
-func (h *Handler) GenerateScript(c *gin.Context) {
-	var req model.ScriptRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	task, err := h.svc.GenerateScript(c.Request.Context(), &req)
-	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	response.Success(c, task)
-}
-
-func (h *Handler) GenerateStoryboard(c *gin.Context) {
-	var req model.StoryboardRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	task, err := h.svc.GenerateStoryboard(c.Request.Context(), &req)
-	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	response.Success(c, task)
-}
-
-func (h *Handler) GenerateFrames(c *gin.Context) {
-	var req model.FrameRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	task, err := h.svc.GenerateFrames(c.Request.Context(), &req)
-	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	response.Success(c, task)
-}
-
-func (h *Handler) GenerateVideo(c *gin.Context) {
-	var req model.VideoGenerationRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	task, err := h.svc.GenerateVideo(c.Request.Context(), &req)
-	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	response.Success(c, task)
-}
-
-// Configuration
+// ============================================
+// 配置 API
+// ============================================
 
 func (h *Handler) GetVideoProviders(c *gin.Context) {
-	// Implementation
 	c.JSON(http.StatusOK, gin.H{"providers": []string{"douyin", "kuaishou", "bilibili", "xiaohongshu"}})
 }
 
@@ -186,7 +166,9 @@ func (h *Handler) SetOSSConfig(c *gin.Context) {
 	response.Success(c, cfg)
 }
 
-// Task status
+// ============================================
+// 任务状态 API
+// ============================================
 
 func (h *Handler) GetTaskStatus(c *gin.Context) {
 	idStr := c.Param("id")
@@ -196,7 +178,7 @@ func (h *Handler) GetTaskStatus(c *gin.Context) {
 		return
 	}
 
-	// Get task from service/repository
+	// TODO: 从数据库获取真实任务状态
 	c.JSON(http.StatusOK, gin.H{"id": id, "status": "processing", "progress": 50})
 }
 

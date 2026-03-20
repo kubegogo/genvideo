@@ -46,7 +46,7 @@ $env:CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS = "1"
 
 #### 环境说明
 
-1、开发在本机环境进行
+1、开发在本机docker环境进行
 2、测试部署到docker中进行测试
 3、mysql、redis在本机docker自建
 4、程序模型调用优先使用国内
